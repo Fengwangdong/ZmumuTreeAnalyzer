@@ -1,8 +1,9 @@
 #!/usr/bin/python
 import ROOT
-from ROOT import TObject, TStyle, THStack, TPad, TFile, TH1, TH1D, TCanvas, TROOT, TLegend, TLatex, TKey, TString, TAttFill
+from ROOT import TObject, TStyle, THStack, TPad, TFile, TH1, TH1D, TCanvas, TROOT, TLegend, TLatex, TKey, TString, TAttFill, TGraphAsymmErrors
 import tdrStyle
 import libPyROOT
+from array import array
 
 tdrStyle.setTDRStyle()
 ROOT.gStyle.SetErrorX(0.5)
@@ -78,7 +79,7 @@ for k,keyHist in enumerate(histList):
     legend = ROOT.TLegend(0.77,0.6,0.99,0.99);
     legend.SetFillColor(0);
     legend.SetTextSize(0.04);
-    legend.AddEntry(data,"Data","ep");
+    legend.AddEntry(data,"Data","epl");
 
     ratio = data.Clone()
     hSumMC = ROOT.THStack("", "") # used to compare the data and MC sum in plots
@@ -96,7 +97,16 @@ for k,keyHist in enumerate(histList):
         hSumMC.Add(iMC)
         legend.AddEntry(iMC, MClabel[i], "f")
 
-    ratio.Divide(hSumMC.GetStack().Last().Clone())
+    hSyst = hSumMC.GetStack().Last().Clone()
+    nBins = hSyst.GetNbinsX()
+
+    for ibin in range(nBins):
+        if ratio.GetBinContent(ibin+1) == 0 or hSyst.GetBinContent(ibin+1) == 0:
+            continue
+        statUnc = ratio.GetBinError(ibin+1)/ratio.GetBinContent(ibin+1)
+        ratio.SetBinContent(ibin+1,ratio.GetBinContent(ibin+1)/hSyst.GetBinContent(ibin+1))
+        ratio.SetBinError(ibin+1,statUnc)
+
     ratio.SetLineColor(1)
     ratio.SetLineWidth(1)
     ratio.SetMarkerStyle(20)
@@ -113,6 +123,31 @@ for k,keyHist in enumerate(histList):
     ratio.GetXaxis().SetTitleSize(0.11);
     ratio.GetXaxis().SetLabelSize(0.11);
 
+    xCoor = array('d')
+    yCoor = array('d')
+    xErr = array('d')
+    yErr = array('d')
+
+    for ibin in range(nBins):
+        xCoor.append(hSyst.GetBinCenter(ibin+1))
+        yCoor.append(1.0)
+        xErr.append(hSyst.GetBinWidth(ibin+1)/2.0)
+
+        if hSyst.GetBinContent(ibin+1) == 0:
+            yErr.append(0)
+            continue
+
+        yErr.append(hSyst.GetBinError(ibin+1)/hSyst.GetBinContent(ibin+1))
+
+
+    grSyst = ROOT.TGraphAsymmErrors(nBins, xCoor, yCoor, xErr, xErr, yErr, yErr)
+
+    grSyst.SetFillColor(12)
+    grSyst.SetLineColor(12)
+    grSyst.SetFillStyle(3013)
+
+    legend.AddEntry(grSyst,"Syst Unc","f")
+
     pad1.cd()
     data.Draw("EP")
     hSumMC.Draw("HIST same")
@@ -125,4 +160,5 @@ for k,keyHist in enumerate(histList):
 
     pad2.cd()
     ratio.Draw("EP")
+    grSyst.Draw("2")
     canvas.SaveAs("controlPlots/" + keyHist + "_pass_postfit.pdf")
