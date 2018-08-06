@@ -13,9 +13,19 @@ fileDir = "./postfit/"
 MCfileList = ["DYJ", "DYB", "VV", "W", "TT", "QCD", "DYS"]
 MClabel = ["Z(ll)Jets", "Z(ll)", "VV", "WJets", "TTJets", "QCD", "Z(#tau#tau)"]
 
-histList = ["visMass", "mtTauMu", "ptTauHad"]
-histLabel = ["M_{#tau#tau}^{vis} [GeV]", "M_{T}(#tau_{#mu}) [GeV]", "p_{T}(#tau_{h}) [GeV]"]
-histRange = [[0,200],[0,40],[20,200]]
+histFileName = "histList.txt"
+histFile = open(histFileName, "r+")
+lines = histFile.readlines()
+
+histList = []
+histLabel = []
+histRange = []
+
+for l in lines:
+    line = l.split()
+    histList.append(line[0])
+    histLabel.append(line[1])
+    histRange.append([float(line[2]),float(line[3])])
 
 label1 = ROOT.TLatex(0.17,0.86, "CMS Preliminary")
 label2 = ROOT.TLatex(0.21,0.96, "#sqrt{s} = 13 TeV, Lumi = 35.9 fb^{-1}")
@@ -38,8 +48,10 @@ for k,keyHist in enumerate(histList):
     pad1 = ROOT.TPad("plot1","plot1",0.05,0.33,0.95,0.97)
     pad2 = ROOT.TPad("plot2","plot2",0.05,0.02,0.95,0.35)
     pad1.SetTopMargin(0.05)
+    pad1.SetLeftMargin(0.15)
     pad1.SetBottomMargin(0)
     pad2.SetTopMargin(0.05)
+    pad2.SetLeftMargin(0.15)
     pad2.SetBottomMargin(0.3)
     pad2.SetGridy()
     pad2.SetTicks()
@@ -64,7 +76,7 @@ for k,keyHist in enumerate(histList):
     data.SetMarkerStyle(20)
     data.SetMarkerColor(1)
     data.GetYaxis().SetTitle("#Events");
-    data.GetYaxis().SetTitleOffset(1.);
+    data.GetYaxis().SetTitleOffset(1.3);
     data.GetYaxis().SetTitleSize(0.06);
     data.GetYaxis().SetLabelSize(0.05);
     data.GetXaxis().SetRangeUser(histRange[k][0],histRange[k][1])

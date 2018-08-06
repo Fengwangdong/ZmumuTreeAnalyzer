@@ -1,0 +1,4 @@
+python drawplot_pass_prefit.py
+python drawplot_pass_postfit.py
+python drawplot_fail_prefit.py
+python drawplot_fail_postfit.py
